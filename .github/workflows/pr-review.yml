@@ -1,7 +1,7 @@
-name: 🤖 LLM Code Review
+name: LLM Code Review
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize]
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
         run: |
           chmod +x ./review_diff.sh
           ./review_diff.sh > model_review.md
-          
+
       - name: 💬 Show AI Code Review in Logs
         run: |
           echo "------ BEGIN AI CODE REVIEW ------"
