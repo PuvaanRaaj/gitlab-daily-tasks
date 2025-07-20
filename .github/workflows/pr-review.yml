@@ -10,6 +10,9 @@ jobs:
     steps:
       - name: 🔄 Checkout PR code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch full history so git diff works
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: 🐋 Install Docker
         run: |

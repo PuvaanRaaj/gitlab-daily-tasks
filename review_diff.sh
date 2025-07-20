@@ -6,7 +6,9 @@ MODEL="ai/llama3.2:latest"
 echo "# 🧠 LLM Code Review Summary" > $REPORT_FILE
 
 # Get list of modified files in PR
-FILES=$(git diff --name-only origin/main...HEAD | grep -E '\.py|\.js|\.ts|\.php|\.go$')
+BASE_BRANCH="${GITHUB_BASE_REF:-main}"
+
+FILES=$(git diff origin/$BASE_BRANCH...HEAD --name-only --diff-filter=ACM | grep -E '\.py|\.js|\.ts|\.php|\.go$')
 
 for FILE in $FILES; do
   if [ -f "$FILE" ]; then
