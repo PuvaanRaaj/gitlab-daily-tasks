@@ -2,7 +2,7 @@ name: 🤖 LLM Code Review
 
 on:
   pull_request:
-    types: [push, opened, synchronize]
+    types: [opened, synchronize]
 
 jobs:
   llama-review:
@@ -11,13 +11,18 @@ jobs:
       - name: 🔄 Checkout PR code
         uses: actions/checkout@v3
 
-      - name: ⚙️ Install Docker Engine + DMR plugin
+      - name: 🐋 Install Docker
         run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io docker model install-runner
-          sudo systemctl enable docker
-          sudo systemctl start docker
-          docker version
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sh get-docker.sh
+          sudo usermod -aG docker $USER
+          docker --version
+
+      - name: 🔌 Install Docker Model Runner (DMR)
+        run: |
+          DMR_URL=$(curl -s https://api.github.com/repos/docker/model/releases/latest | grep "browser_download_url" | grep "linux_amd64.deb" | cut -d '"' -f 4)
+          curl -LO "$DMR_URL"
+          sudo apt install -y ./$(basename "$DMR_URL")
           docker model version
 
       - name: 📦 Pull LLM model
