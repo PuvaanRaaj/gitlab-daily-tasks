@@ -1,93 +1,89 @@
-# GitLab Daily Task Viewer
+GitLab Daily Task Viewer
 
 A lightweight Flask-based web app that fetches daily GitLab issues and formats them for team standups. Each user is associated with a GitLab token, role, and metadata for categorizing their tasks into TODO, DOING, REVIEW, or DEPLOYED sections.
+🚀 Features
 
----
+    📋 Categorizes issues from GitLab by label and state (TODO, DOING, REVIEW, DEPLOYED)
 
-## 🚀 Features
+    ✂️ One-click copyable task summary
 
-* Categorizes issues from GitLab by label and state
-* One-click copyable task summary
-* Admin UI to add and update users
-* Role-aware (job title) support for programmers, QA, etc.
-* SQLite-based lightweight storage
-* Dockerized and environment-based configuration
+    🧑‍💼 Admin UI to add and update users
 
----
+    🧠 Role-aware support for Programmers, QA, PM, etc.
 
-## 🛠️ Setup Instructions
+    📊 Contributions Analytics Chart using Chart.js
 
-### 1. Clone the Repo
+    📅 Date range picker for GitLab contributions
 
-```bash
+    📁 SQLite-based lightweight local storage
+
+    🐳 Dockerized with .env configuration
+
+    🔐 Secure admin access in production mode
+
+🛠️ Setup Instructions
+1. Clone the Repo
+
 git clone https://your.repo.url.git
-dcd gitlab-task-viewer
-```
+cd gitlab-task-viewer
 
-### 2. Add a `.env` file
+2. Add a .env file
 
-```
 FLASK_ENV=dev
 SECRET_KEY=super-secret-key
 ADMIN_PASSWORD=your_admin_password
-```
+GITLAB_API_BASE=https://gitlab.com
 
-Set `FLASK_ENV=prod` in production to enable admin login.
+    Set FLASK_ENV=prod in production to enable admin login.
 
-### 3. Build and Run via Docker
+3. Build and Run via Docker
 
-```bash
 docker build -t gitlab-task-viewer .
 docker run -p 5000:5000 gitlab-task-viewer
-```
 
 Or using Docker Compose:
 
-```bash
 docker-compose up --build
-```
 
----
+🔗 Routes
+Route	Description
+/	📊 Contributions Analytics Dashboard
+/task	✅ Daily task viewer and categorizer
+/admin/add-user	➕ Add new user to the system
+/admin/users	📝 List and update existing users
+👤 User Model Fields
 
-## 🔗 Routes
+    display_name
 
-| Route             | Description                |
-| ----------------- | -------------------------- |
-| `/`               | Main task viewer page      |
-| `/admin/add-user` | Add new user to the system |
-| `/admin/users`    | List and update users      |
+    team_lead
 
-In `prod` mode, admin routes require login using `ADMIN_PASSWORD`.
+    gitlab_username
 
----
+    token
 
-## 👤 User Model Fields
+    job_title (e.g., Programmer, QA, PM)
 
-* `display_name`
-* `team_lead`
-* `gitlab_username`
-* `token`
-* `job_title` (e.g., Programmer, QA, PM)
+📈 Analytics Dashboard
 
----
+The homepage includes a contributions bar chart with:
 
-## 🧠 How Categorization Works
+    ⏱️ Custom date range selection (default = last 7 days)
 
-Based on GitLab labels:
+    📊 Chart.js visualization of daily activity
 
-* `DO::To Do` → TODO
-* `DO::Doing` → DOING
-* `DO::Approved` → READY FOR REVIEW
-* `state=closed` → DEPLOYED
-* others → Uncategorized
+    🧠 Auto-selects the first user for display
 
-The output is rendered in monospace style and optimized for copy/paste in chat.
+🧠 Task Categorization Logic
 
----
+GitLab labels determine which category the issue goes into:
+Label	Category
+DO::To Do	TODO
+DO::Doing	DOING
+DO::Approved	READY FOR REVIEW
+state=closed	DEPLOYED
+others	Uncategorized
+📝 Sample Output (Copied)
 
-## 📝 Sample Output
-
-```
 MEMBER : Puvaan Raaj  [TL: Singh]
 ========================== TODO ============================
 ❗ [P1] Implement login
@@ -98,18 +94,25 @@ MEMBER : Puvaan Raaj  [TL: Singh]
 ========================== DOING ============================
 ❗ [P2] Add Tailwind UI
 ...
-```
 
----
+🔐 Security Notes
 
-## 🔐 Security Notes
+    Admin routes are password-protected in prod
 
-* Use a strong `ADMIN_PASSWORD` in `.env`
-* Admin pages auto-protect in `prod`
-* Tokens are stored in SQLite; use encryption for production if needed
+    Tokens stored in SQLite — encrypt in production
 
----
+    Use a strong SECRET_KEY and ADMIN_PASSWORD
 
-## 📬 License
+🧪 CI/CD (Planned or Suggested)
 
-MIT — free to use and customize.
+    ✅ [x] Python formatting via ruff
+
+    ✅ [x] Basic Flask healthcheck
+
+    🔜 [ ] GitLab pipeline integration
+
+    🔜 [ ] End-to-end test with pytest + requests
+
+📬 License
+
+MIT — free to use and customize for your team.
