@@ -5,18 +5,24 @@ MODEL="ai/llama3.2:latest"
 
 echo "# 🧠 LLM Code Review Summary" > "$REPORT_FILE"
 
-# Get all changed source code files since the last push
-FILES=$(git diff --name-only --diff-filter=ACM @{u}..HEAD | grep -E '\.py$|\.js$|\.ts$|\.php$|\.go$')
+# Get the latest commit SHA that actually modified tracked files
+LATEST_COMMIT=$(git log --pretty=format:"%H" -n 1)
+
+# Double check with HEAD^ to form diff range
+PREV_COMMIT=$(git rev-parse "$LATEST_COMMIT"^)
+
+# Get changed files from that specific commit
+FILES=$(git diff --name-only --diff-filter=ACM "$PREV_COMMIT" "$LATEST_COMMIT" | grep -E '\.(py|js|ts|php|go|sh|md|ya?ml)$')
 
 if [ -z "$FILES" ]; then
-  echo "No relevant files changed since last push." >> "$REPORT_FILE"
-  exit 0
+  echo "No relevant files changed in the last commit ($LATEST_COMMIT)."
+  exit 0  # Don't proceed if nothing relevant changed
 fi
 
-echo "Files changed since last push:"
+echo "Files changed in last commit ($LATEST_COMMIT):"
 echo "$FILES"
 
-# Aggregate all code with filenames
+# Aggregate code for prompt
 AGGREGATED_CODE=""
 for FILE in $FILES; do
   if [ -f "$FILE" ]; then
@@ -25,10 +31,11 @@ for FILE in $FILES; do
   fi
 done
 
-# Prompt the LLM to review all files in one go
-PROMPT="You are an expert code reviewer. Analyze the following code files and provide detailed suggestions, improvements, and flag any bad practices, security issues, or inefficiencies. Mention the filename when referring to specific code:\n$AGGREGATED_CODE"
+# AI prompt
+PROMPT="You are an expert code reviewer. Review the following code files and provide detailed, actionable suggestions. Mention filenames, and include performance, security, and style feedback:\n$AGGREGATED_CODE"
 
+# Run the model
 RESPONSE=$(docker model run "$MODEL" "$PROMPT" 2>/dev/null)
 
-# Save output
+# Write to review file
 echo -e "$RESPONSE" >> "$REPORT_FILE"
