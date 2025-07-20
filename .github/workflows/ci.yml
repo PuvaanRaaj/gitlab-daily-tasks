@@ -3,25 +3,23 @@ name: Lint and Test
 on: [push, pull_request]
 
 jobs:
-  test-and-lint:
+  lint-and-test:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install bandit ruff
-
+      - run: pip install -r requirements.txt  safety pip-audit
       - name: Run Ruff
         run: ruff check .
-
+      - name: Run Black
+        run: black --check .
+      - name: Run isort
+        run: isort --check-only .
       - name: Run Bandit
         run: bandit -r .
-
+      - name: Run Safety
+        run: safety check
+      - name: Run pip-audit
+        run: pip-audit
