@@ -1,0 +1,17 @@
+# .github/workflows/lint.yml
+name: Lint Python Code
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - run: pip3 install ruff
+    - run: ruff .
