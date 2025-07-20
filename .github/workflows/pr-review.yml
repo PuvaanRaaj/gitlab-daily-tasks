@@ -11,8 +11,11 @@ jobs:
       - name: 🔄 Checkout PR code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Fetch full history so git diff works
+          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: 🔄 Fetch base branch
+        run: git fetch origin main
 
       - name: 🐋 Install Docker
         run: |
@@ -41,8 +44,13 @@ jobs:
           cat model_review.md
           echo "------ END AI CODE REVIEW ------"
 
-
-      # - name: 💬 Post comment to PR
-      #   uses: marocchino/sticky-pull-request-comment@v2
-      #   with:
-      #     path: model_review.md
+      - name: 💬 Post AI Comment via API
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMENT=$(jq -Rs . < model_review.md)
+          curl -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            -d "{\"body\": $COMMENT}"
