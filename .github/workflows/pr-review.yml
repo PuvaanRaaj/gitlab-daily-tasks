@@ -34,8 +34,15 @@ jobs:
         run: |
           chmod +x ./review_diff.sh
           ./review_diff.sh > model_review.md
+          
+      - name: 💬 Show AI Code Review in Logs
+        run: |
+          echo "------ BEGIN AI CODE REVIEW ------"
+          cat model_review.md
+          echo "------ END AI CODE REVIEW ------"
 
-      - name: 💬 Post comment to PR
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          path: model_review.md
+
+      # - name: 💬 Post comment to PR
+      #   uses: marocchino/sticky-pull-request-comment@v2
+      #   with:
+      #     path: model_review.md
