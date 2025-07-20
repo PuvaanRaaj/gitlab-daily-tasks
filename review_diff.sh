@@ -2,17 +2,16 @@
 
 REPORT_FILE="model_review.md"
 MODEL="ai/llama3.2:latest"
+BASE_BRANCH="${GITHUB_BASE_REF:-main}"
 
-echo "# 🧠 LLM Code Review Summary" > $REPORT_FILE
+git fetch origin $BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH
 
-# Ensure origin/main exists for diff
-git fetch origin main
+echo "# LLM Code Review Summary" > $REPORT_FILE
 
-# Get list of modified files
-FILES=$(git diff origin/main...HEAD --name-only --diff-filter=ACM | grep -E '\.py|\.js|\.ts|\.php|\.go$')
+FILES=$(git diff origin/$BASE_BRANCH...HEAD --name-only --diff-filter=ACM | grep -E '\.py|\.js|\.ts|\.php|\.go$')
 
 if [ -z "$FILES" ]; then
-  echo "No changed files to review." >> $REPORT_FILE
+  echo " No changed files to review." >> $REPORT_FILE
 else
   for FILE in $FILES; do
     if [ -f "$FILE" ]; then
