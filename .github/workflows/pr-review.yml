@@ -29,8 +29,8 @@ jobs:
 
       - name: 🧠 Run LLM Code Review
         run: |
-          chmod +x .github/scripts/review_diff.sh
-          .github/scripts/review_diff.sh > model_review.md
+          chmod +x ./review_diff.sh
+          ./review_diff.sh > model_review.md
 
       - name: 💬 Post comment to PR
         uses: marocchino/sticky-pull-request-comment@v2
