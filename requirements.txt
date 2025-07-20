@@ -1,0 +1,6 @@
+flask
+requests
+pytz
+Flask-SQLAlchemy
+dotenv
+
