@@ -1,118 +1,70 @@
-GitLab Daily Task Viewer
+# 🧠 GitLab Daily Tasks Tracker
 
-A lightweight Flask-based web app that fetches daily GitLab issues and formats them for team standups. Each user is associated with a GitLab token, role, and metadata for categorizing their tasks into TODO, DOING, REVIEW, or DEPLOYED sections.
-🚀 Features
+A Flask web application to help team leads and developers view daily GitLab issues categorized by status. The system supports user management, GitLab API integration, and task grouping based on custom labels.
 
-    📋 Categorizes issues from GitLab by label and state (TODO, DOING, REVIEW, DEPLOYED)
+## 🚀 Features
 
-    ✂️ One-click copyable task summary
+* 🧑‍💼 Manage users and assign GitLab usernames
+* 📊 View GitLab issues categorized by:
 
-    🧑‍💼 Admin UI to add and update users
+  * TODO
+  * DOING
+  * READY FOR REVIEW
+  * DEPLOYED
+* 🔐 Secure token storage using environment variables
+* 🗃️ SQLite database for user records
+* 🌐 Web UI for admin tasks and issue views
 
-    🧠 Role-aware support for Programmers, QA, PM, etc.
+## 📦 Requirements
 
-    📊 Contributions Analytics Chart using Chart.js
+* Python 3.11+
+* GitLab API access token
+* Docker (for containerized deployment)
 
-    📅 Date range picker for GitLab contributions
+## 🐳 Docker Setup
 
-    📁 SQLite-based lightweight local storage
+```bash
+docker build -t gitlab-daily-tasks .
+docker run -p 5000:5000 --env-file .env gitlab-daily-tasks
+```
 
-    🐳 Dockerized with .env configuration
+## 📝 .env Example
 
-    🔐 Secure admin access in production mode
+```
+SECRET_KEY=your-super-secret-key
+```
 
-🛠️ Setup Instructions
-1. Clone the Repo
+## 🛠️ Development
 
-git clone https://your.repo.url.git
-cd gitlab-task-viewer
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-2. Add a .env file
+# Run app locally
+python app.py
+```
 
-FLASK_ENV=dev
-SECRET_KEY=super-secret-key
-ADMIN_PASSWORD=your_admin_password
-GITLAB_API_BASE=https://gitlab.com
+## 📁 File Structure
 
-    Set FLASK_ENV=prod in production to enable admin login.
+* `app.py` - Main Flask app
+* `templates/` - HTML templates
+* `static/` - Static assets (optional)
+* `users.db` - SQLite database (auto-created)
 
-3. Build and Run via Docker
+## 🤖 GitHub PR Code Review (Optional)
 
-docker build -t gitlab-task-viewer .
-docker run -p 5000:5000 gitlab-task-viewer
+To enable AI-driven pull request reviews, use the provided GitHub Actions workflow (`.github/workflows/pr-review.yml`). It runs a containerized LLM to review diff changes.
 
-Or using Docker Compose:
+## 🔄 In Process / Enhancements
 
-docker-compose up --build
+* [x] GitLab issue integration
+* [x] Basic user management
+* [x] Docker containerization
+* [x] CI/CD integration
+* [x] Dark mode UI toggle
+* [ ] Email notifications for tasks
+* [ ] Role-based access control
 
-🔗 Routes
-Route	Description
-/	📊 Contributions Analytics Dashboard
-/task	✅ Daily task viewer and categorizer
-/admin/add-user	➕ Add new user to the system
-/admin/users	📝 List and update existing users
-👤 User Model Fields
+## 📃 License
 
-    display_name
-
-    team_lead
-
-    gitlab_username
-
-    token
-
-    job_title (e.g., Programmer, QA, PM)
-
-📈 Analytics Dashboard
-
-The homepage includes a contributions bar chart with:
-
-    ⏱️ Custom date range selection (default = last 7 days)
-
-    📊 Chart.js visualization of daily activity
-
-    🧠 Auto-selects the first user for display
-
-🧠 Task Categorization Logic
-
-GitLab labels determine which category the issue goes into:
-Label	Category
-DO::To Do	TODO
-DO::Doing	DOING
-DO::Approved	READY FOR REVIEW
-state=closed	DEPLOYED
-others	Uncategorized
-📝 Sample Output (Copied)
-
-MEMBER : Puvaan Raaj  [TL: Singh]
-========================== TODO ============================
-❗ [P1] Implement login
-🗣 Team: Puvaan
-🕙 Opened: 20-09-2024 14:22:10
-🔗 https://...
-
-========================== DOING ============================
-❗ [P2] Add Tailwind UI
-...
-
-🔐 Security Notes
-
-    Admin routes are password-protected in prod
-
-    Tokens stored in SQLite — encrypt in production
-
-    Use a strong SECRET_KEY and ADMIN_PASSWORD
-
-🧪 CI/CD (Planned or Suggested)
-
-    ✅ [x] Python formatting via ruff
-
-    ✅ [x] Basic Flask healthcheck
-
-    🔜 [ ] GitLab pipeline integration
-
-    🔜 [ ] End-to-end test with pytest + requests
-
-📬 License
-
-MIT — free to use and customize for your team.
+MIT License
