@@ -2,10 +2,8 @@ flask
 requests
 pytz
 Flask-SQLAlchemy
-dotenv
-black 
-isort 
-ruff 
+python-dotenv
+black
+isort
+ruff
 bandit
-datetime
-
