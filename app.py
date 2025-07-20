@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
+from models.user import db, User, UserStatus
 
 import pytz
 import requests
@@ -13,45 +14,44 @@ load_dotenv()
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
 app.secret_key = os.environ.get("SECRET_KEY", "insecure-dev-key")
-db = SQLAlchemy(app)
-
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    display_name = db.Column(db.String(100))
-    team_lead = db.Column(db.String(100))
-    gitlab_username = db.Column(db.String(100))
-    token = db.Column(db.String(200))
-    job_title = db.Column(db.String(100))
+db.init_app(app)
 
 
 @app.before_request
 def create_tables_once():
     if not hasattr(app, "db_initialized"):
-        db.create_all()
+        with app.app_context():
+            db.create_all()
         app.db_initialized = True
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def dashboard():
-    users = User.query.all()
+    users = User.query.filter(User.status == UserStatus.ACTIVE).all()
     if not users:
         return redirect(url_for("add_user"))
 
-    first_user = users[0]
-    today = datetime.utcnow().date()
-    start_date = (today - timedelta(days=14)).isoformat()
-    end_date = today.isoformat()
+    selected_user = users[0]
+    start_date = (
+        request.form.get("start")
+        or (datetime.utcnow().date() - timedelta(days=7)).isoformat()
+    )
+    end_date = request.form.get("end") or datetime.utcnow().date().isoformat()
+
+    if request.method == "POST":
+        user_id = request.form.get("user_id")
+        if user_id:
+            selected_user = User.query.get(user_id)
 
     try:
-        headers = {"PRIVATE-TOKEN": first_user.token}
+        headers = {"PRIVATE-TOKEN": selected_user.token}
         res = requests.get(
             f"{os.getenv('GITLAB_API_BASE', 'https://gitlab.com')}/api/v4/user",
             headers=headers,
         )
         user_id = res.json().get("id")
         contributions = get_user_contributions(
-            user_id, first_user.token, start_date, end_date
+            user_id, selected_user.token, start_date, end_date
         )
         labels = sorted(contributions.keys())
         values = [contributions[d] for d in labels]
@@ -60,20 +60,32 @@ def dashboard():
         values = []
         print(f"Error fetching contributions: {e}")
 
-    return render_template("index.html", labels=labels, values=values)
+    return render_template(
+        "index.html",
+        labels=labels,
+        values=values,
+        users=users,
+        selected_user=selected_user,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 @app.route("/task", methods=["GET", "POST"])
 def task_view():
-    users = User.query.all()
+    users = User.query.filter(User.status == UserStatus.ACTIVE).all()
     if not users:
         return redirect(url_for("add_user"))
 
     selected_user = None
     issues_by_category = None
+    start_date = (datetime.utcnow().date() - timedelta(days=7)).isoformat()
+    end_date = datetime.utcnow().date().isoformat()
 
     if request.method == "POST":
         user_id = request.form.get("user_id")
+        start_date = request.form.get("start_date") or start_date
+        end_date = request.form.get("end_date") or end_date
         if not user_id:
             return redirect(url_for("task_view"))
         selected_user = User.query.get(user_id)
@@ -85,6 +97,8 @@ def task_view():
         users=users,
         user=selected_user,
         issues_by_category=issues_by_category,
+        start_date=start_date,
+        end_date=end_date,
     )
 
 
@@ -97,6 +111,7 @@ def add_user():
             gitlab_username=request.form["gitlab_username"],
             token=request.form["token"],
             job_title=request.form["job_title"],
+            status=UserStatus.ACTIVE,
         )
         db.session.add(new_user)
         db.session.commit()
@@ -118,13 +133,14 @@ def update_user(user_id):
     user.gitlab_username = request.form["gitlab_username"]
     user.token = request.form["token"]
     user.job_title = request.form["job_title"]
+    user.status = UserStatus(int(request.form.get("status", user.status.value)))
     db.session.commit()
     return redirect(url_for("list_users"))
 
 
 @app.context_processor
 def inject_users():
-    return {"nav_users": User.query.all()}
+    return {"nav_users": User.query.filter(User.status == UserStatus.ACTIVE).all()}
 
 
 def fetch_gitlab_issues(username, token):
