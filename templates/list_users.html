@@ -3,28 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <title>All GitLab Users</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/darkly/bootstrap.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0f172a;
+      color: #fff;
+    }
+
+    nav {
+      background-color: #1e293b;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+    }
+
+    nav h1 {
+      font-size: 20px;
+      color: #4ade80;
+    }
+
+    nav .nav-links a {
+      color: #fff;
+      margin-left: 24px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    nav .nav-links a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      font-size: 36px;
+      margin-bottom: 30px;
+      color: #4ade80;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 16px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #334155;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background-color: #273449;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background-color: #334155;
+      color: white;
+      font-size: 14px;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      background-color: #475569;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: linear-gradient(to right, #3b82f6, #2563eb);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: linear-gradient(to right, #2563eb, #1d4ed8);
+    }
+
+    form {
+      margin: 0;
+    }
+  </style>
 </head>
 <body>
-<div class="container mt-4">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary rounded">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">GitLab Viewer</a>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="/admin/add-user">Add User</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/admin/users">Update Users</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
 
-  <h2 class="mt-4">Registered Users</h2>
-  <table class="table table-dark table-bordered">
+<nav>
+  <h1>GitLab Viewer</h1>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/admin/add-user">Add User</a>
+    <a href="/admin/users">Update Users</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h2>Registered Users</h2>
+  <table>
     <thead>
       <tr>
         <th>Display Name</th>
@@ -32,30 +125,33 @@
         <th>GitLab Username</th>
         <th>Token</th>
         <th>Job Title</th>
-        <th>Update</th>
+        <th>Action</th>
       </tr>
     </thead>
     <tbody>
       {% for user in users %}
       <tr>
         <form method="post" action="/admin/users/{{ user.id }}/update">
-          <td><input class="form-control" name="display_name" value="{{ user.display_name }}"></td>
-          <td><input class="form-control" name="team_lead" value="{{ user.team_lead }}"></td>
-          <td><input class="form-control" name="gitlab_username" value="{{ user.gitlab_username }}"></td>
-          <td><input class="form-control" name="token" value="{{ user.token }}"></td>
+          <td><input name="display_name" value="{{ user.display_name }}"></td>
+          <td><input name="team_lead" value="{{ user.team_lead }}"></td>
+          <td><input name="gitlab_username" value="{{ user.gitlab_username }}"></td>
+          <td><input name="token" value="{{ user.token }}"></td>
           <td>
-            <select class="form-control" name="job_title">
+            <select name="job_title">
               <option value="Programmer" {% if user.job_title == 'Programmer' %}selected{% endif %}>Programmer</option>
               <option value="QA" {% if user.job_title == 'QA' %}selected{% endif %}>QA</option>
               <option value="QC" {% if user.job_title == 'QC' %}selected{% endif %}>QC</option>
+              <option value="Project Manager" {% if user.job_title == 'Project Manager' %}selected{% endif %}>Project Manager</option>
+              <option value="Other" {% if user.job_title == 'Other' %}selected{% endif %}>Other</option>
             </select>
           </td>
-          <td><button class="btn btn-success btn-sm">Update</button></td>
+          <td><button type="submit">Update</button></td>
         </form>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
 </body>
 </html>
