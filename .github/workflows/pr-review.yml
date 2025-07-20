@@ -8,43 +8,43 @@ jobs:
   llama-review:
     runs-on: ubuntu-latest
     steps:
-      - name: 🔄 Checkout PR code
+      - name: Checkout PR code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: 🔄 Fetch base branch
+      - name: Fetch base branch
         run: git fetch origin main
 
-      - name: 🐋 Install Docker
+      - name: Install Docker
         run: |
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
           sudo usermod -aG docker $USER
           docker --version
 
-      - name: 🔌 Install Docker Model Runner (DMR)
+      - name: Install Docker Model Runner (DMR)
         run: |
           sudo apt-get update
           sudo apt-get install docker-model-plugin
           docker model version
 
-      - name: 📦 Pull LLM model
+      - name: Pull LLM model
         run: docker model pull ai/llama3.2:latest
 
-      - name: 🧠 Run LLM Code Review
+      - name: Run LLM Code Review
         run: |
           chmod +x ./review_diff.sh
           ./review_diff.sh > model_review.md
 
-      - name: 💬 Show AI Code Review in Logs
-        run: |
-          echo "------ BEGIN AI CODE REVIEW ------"
-          cat model_review.md
-          echo "------ END AI CODE REVIEW ------"
+      # - name: Show AI Code Review in Logs
+      #   run: |
+      #     echo "------ BEGIN AI CODE REVIEW ------"
+      #     cat model_review.md
+      #     echo "------ END AI CODE REVIEW ------"
 
-      - name: 💬 Post AI Comment via API
+      - name: Post AI Comment via API
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
