@@ -3,6 +3,7 @@ requests
 pytz
 Flask-SQLAlchemy
 python-dotenv
+Flask-Caching
 black
 isort
 ruff
