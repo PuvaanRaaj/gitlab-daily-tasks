@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white font-mono p-8">
+  <div class="max-w-md mx-auto">
+    <h2 class="text-xl mb-4 text-green-400 font-bold">Admin Login</h2>
+    {% if error %}
+      <p class="text-red-500 mb-2">{{ error }}</p>
+    {% endif %}
+    <form method="POST" class="space-y-4">
+      <input type="password" name="password" placeholder="Enter Admin Password" required class="w-full p-2 bg-gray-900 border border-gray-700 text-white rounded" />
+      <button type="submit" class="bg-blue-600 px-4 py-2 text-white rounded hover:bg-blue-700">Login</button>
+    </form>
+  </div>
+</body>
+</html>

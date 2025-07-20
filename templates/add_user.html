@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add GitLab User</title>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            background-color: #1e293b;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #4ade80;
+            font-size: 32px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 8px;
+            background-color: #334155;
+            color: #fff;
+            font-size: 18px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            background-color: #475569;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background-color: #3b82f6;
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Add New GitLab User</h2>
+        <form method="POST">
+            <input type="text" name="display_name" placeholder="Display Name" required>
+            <input type="text" name="team_lead" placeholder="Team Lead Name" required>
+            <input type="text" name="gitlab_username" placeholder="GitLab Username" required>
+            <input type="text" name="token" placeholder="GitLab Token" required>
+            <select name="job_title" required>
+                <option value="">Select Job Title</option>
+                <option value="Programmer">Programmer</option>
+                <option value="QA">QA</option>
+                <option value="QC">QC</option>
+                <option value="Project Manager">Project Manager</option>
+                <option value="Other">Other</option>
+            </select>
+            <button type="submit">Add User</button>
+        </form>
+    </div>
+</body>
+</html>
