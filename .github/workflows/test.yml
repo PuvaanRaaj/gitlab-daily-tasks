@@ -1,17 +1,29 @@
-# .github/workflows/test.yml
-name: Run Flask Tests
+name: Lint and Test
 
 on: [push, pull_request]
 
 jobs:
-  test:
+  test-and-lint:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - uses: actions/checkout@v3
 
-    - run: pip install -r requirements.txt
-    - run: pytest
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest bandit ruff
+
+      - name: Run Ruff
+        run: ruff check .
+
+      - name: Run Bandit
+        run: bandit -r .
+
+      - name: Run Pytest
+        run: pytest
