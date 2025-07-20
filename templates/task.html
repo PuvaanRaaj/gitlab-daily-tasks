@@ -10,19 +10,29 @@
     <nav class="flex justify-between items-center mb-6">
       <h1 class="text-xl text-green-400 font-bold">GitLab Daily Tasks</h1>
       <div class="space-x-4">
-        <a href="/" class="text-white hover:underline">Home</a>
+        <a href="/" class="text-white hover:underline">Dashboard</a>
         <a href="/admin/add-user" class="text-white hover:underline">Add User</a>
         <a href="/admin/users" class="text-white hover:underline">Update Users</a>
       </div>
     </nav>
 
-    <form method="post" class="mb-8">
-      <label class="block text-gray-400 mb-1">Select Member:</label>
-      <select name="user_id" required class="w-full p-2 mb-2 bg-gray-900 border border-gray-700 text-white rounded">
-        {% for u in users %}
-          <option value="{{ u.id }}">{{ u.display_name }} [TL: {{ u.team_lead }}]</option>
-        {% endfor %}
-      </select>
+    <form method="post" class="flex flex-wrap gap-2 text-black mb-6 items-end">
+      <div>
+        <label class="block text-gray-400 mb-1">Select Member:</label>
+        <select name="user_id" required class="rounded px-2 py-1">
+          {% for u in users %}
+            <option value="{{ u.id }}" {% if user and user.id == u.id %}selected{% endif %}>{{ u.display_name }} [TL: {{ u.team_lead }}]</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-gray-400 mb-1">Start Date:</label>
+        <input type="date" name="start_date" value="{{ start_date }}" class="rounded px-2 py-1">
+      </div>
+      <div>
+        <label class="block text-gray-400 mb-1">End Date:</label>
+        <input type="date" name="end_date" value="{{ end_date }}" class="rounded px-2 py-1">
+      </div>
       <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white">Fetch Tasks</button>
     </form>
 

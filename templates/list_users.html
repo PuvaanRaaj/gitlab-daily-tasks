@@ -125,6 +125,7 @@
         <th>GitLab Username</th>
         <th>Token</th>
         <th>Job Title</th>
+        <th>Status</th>
         <th>Action</th>
       </tr>
     </thead>
@@ -143,6 +144,13 @@
               <option value="QC" {% if user.job_title == 'QC' %}selected{% endif %}>QC</option>
               <option value="Project Manager" {% if user.job_title == 'Project Manager' %}selected{% endif %}>Project Manager</option>
               <option value="Other" {% if user.job_title == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+          </td>
+          <td>
+            <select name="status">
+              <option value="1" {% if user.status.name == 'ACTIVE' %}selected{% endif %}>Active</option>
+              <option value="0" {% if user.status.name == 'DELETED' %}selected{% endif %}>Deleted</option>
+              <option value="2" {% if user.status.name == 'BLOCKED' %}selected{% endif %}>Blocked</option>
             </select>
           </td>
           <td><button type="submit">Update</button></td>

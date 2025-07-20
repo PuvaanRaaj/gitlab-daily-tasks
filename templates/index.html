@@ -18,6 +18,18 @@
       </div>
     </nav>
 
+    <!-- 🗓️ Date Range & User Filter -->
+    <form method="post" class="flex flex-wrap gap-2 text-black mb-6 items-center">
+      <select name="user_id" class="rounded px-2 py-1">
+        {% for u in nav_users %}
+          <option value="{{ u.id }}" {% if u.id == selected_user_id %}selected{% endif %}>{{ u.display_name }}</option>
+        {% endfor %}
+      </select>
+      <input type="date" name="start" value="{{ start_date }}" class="rounded px-2 py-1" />
+      <input type="date" name="end" value="{{ end_date }}" class="rounded px-2 py-1" />
+      <button class="bg-green-600 text-white px-3 py-1 rounded">Filter</button>
+    </form>
+
     <div class="mb-8">
       <h2 class="text-lg font-bold text-yellow-400 mb-4">🧾 Contribution Overview</h2>
       <canvas id="contribChart" class="bg-gray-800 rounded p-4"></canvas>
