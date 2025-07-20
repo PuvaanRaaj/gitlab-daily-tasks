@@ -8,10 +8,39 @@
             background-color: #0f172a;
             color: #fff;
             font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+        }
+
+        nav {
+            background-color: #1e293b;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+
+        nav h1 {
+            font-size: 20px;
+            color: #4ade80;
+        }
+
+        nav .nav-links a {
+            color: #fff;
+            margin-left: 24px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        nav .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        .page {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            height: calc(100vh - 72px);
         }
 
         .container {
@@ -63,23 +92,35 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Add New GitLab User</h2>
-        <form method="POST">
-            <input type="text" name="display_name" placeholder="Display Name" required>
-            <input type="text" name="team_lead" placeholder="Team Lead Name" required>
-            <input type="text" name="gitlab_username" placeholder="GitLab Username" required>
-            <input type="text" name="token" placeholder="GitLab Token" required>
-            <select name="job_title" required>
-                <option value="">Select Job Title</option>
-                <option value="Programmer">Programmer</option>
-                <option value="QA">QA</option>
-                <option value="QC">QC</option>
-                <option value="Project Manager">Project Manager</option>
-                <option value="Other">Other</option>
-            </select>
-            <button type="submit">Add User</button>
-        </form>
+
+    <nav>
+        <h1>GitLab Admin</h1>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/admin/add-user">Add User</a>
+            <a href="/admin/users">Update Users</a>
+        </div>
+    </nav>
+
+    <div class="page">
+        <div class="container">
+            <h2>Add New GitLab User</h2>
+            <form method="POST">
+                <input type="text" name="display_name" placeholder="Display Name" required>
+                <input type="text" name="team_lead" placeholder="Team Lead Name" required>
+                <input type="text" name="gitlab_username" placeholder="GitLab Username" required>
+                <input type="text" name="token" placeholder="GitLab Token" required>
+                <select name="job_title" required>
+                    <option value="">Select Job Title</option>
+                    <option value="Programmer">Programmer</option>
+                    <option value="QA">QA</option>
+                    <option value="QC">QC</option>
+                    <option value="Project Manager">Project Manager</option>
+                    <option value="Other">Other</option>
+                </select>
+                <button type="submit">Add User</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>
