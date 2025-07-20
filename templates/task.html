@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GitLab Daily Tasks</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white font-mono text-sm p-6">
+  <div class="max-w-4xl mx-auto">
+    <nav class="flex justify-between items-center mb-6">
+      <h1 class="text-xl text-green-400 font-bold">GitLab Daily Tasks</h1>
+      <div class="space-x-4">
+        <a href="/" class="text-white hover:underline">Home</a>
+        <a href="/admin/add-user" class="text-white hover:underline">Add User</a>
+        <a href="/admin/users" class="text-white hover:underline">Update Users</a>
+      </div>
+    </nav>
+
+    <form method="post" class="mb-8">
+      <label class="block text-gray-400 mb-1">Select Member:</label>
+      <select name="user_id" required class="w-full p-2 mb-2 bg-gray-900 border border-gray-700 text-white rounded">
+        {% for u in users %}
+          <option value="{{ u.id }}">{{ u.display_name }} [TL: {{ u.team_lead }}]</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white">Fetch Tasks</button>
+    </form>
+
+    {% if user %}
+      <div id="user-info" class="text-white mb-4 font-bold">MEMBER : {{ user.display_name }}  [TL: {{ user.team_lead }}]</div>
+    {% endif %}
+
+    {% if issues_by_category %}
+      <div class="mb-4 text-right">
+        <button onclick="copyAll()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white text-sm">Copy TODO/DOING/REVIEW</button>
+      </div>
+
+      {% for category, issues in issues_by_category.items() %}
+        <div class="mb-6">
+          <div class="text-yellow-400 font-bold mb-2">========================== {{ category }} ============================</div>
+          {% if issues %}
+            <pre id="block-{{ category }}" class="bg-gray-800 border border-gray-700 px-4 py-2 rounded whitespace-pre-line leading-snug">
+{% for issue in issues %}
+❗ [{{ issue.priority }}] {{ issue.title }}
+🗣 Team: {{ issue.author }}
+🕙 Opened: {{ issue.created_at }}
+🔗 {{ issue.web_url }}
+{% endfor %}
+            </pre>
+          {% else %}
+            <div class="text-gray-500">No issues in this category.</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <script>
+    function copyAll() {
+      const categories = ['TODO', 'DOING', 'READY FOR REVIEW'];
+      let result = '';
+
+      const userInfo = document.getElementById('user-info');
+      if (userInfo) {
+        result += userInfo.innerText.trim() + '\n\n';
+      }
+
+      categories.forEach(cat => {
+        const pre = document.getElementById('block-' + cat);
+        if (pre) {
+          result += `========================== ${cat} ============================\n\n`;
+          result += pre.innerText.trim() + '\n\n';
+        }
+      });
+
+      navigator.clipboard.writeText(result).then(() => {
+        alert("Copied TODO/DOING/READY FOR REVIEW to clipboard!");
+      });
+    }
+  </script>
+</body>
+</html>
