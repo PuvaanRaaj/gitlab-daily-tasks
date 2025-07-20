@@ -3,4 +3,8 @@ requests
 pytz
 Flask-SQLAlchemy
 dotenv
+black 
+isort 
+ruff 
+bandit
 
