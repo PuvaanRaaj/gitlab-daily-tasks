@@ -45,7 +45,6 @@ jobs:
       #     echo "------ END AI CODE REVIEW ------"
 
       - name: Post AI Comment via API
-        if: success() && steps.llm-review.outputs.has_review == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
