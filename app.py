@@ -1,13 +1,13 @@
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
-from models.user import db, User, UserStatus
 
 import pytz
 import requests
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, url_for
-from flask_sqlalchemy import SQLAlchemy
+
+from models.user import User, UserStatus, db
 
 load_dotenv()
 
@@ -48,6 +48,7 @@ def dashboard():
         res = requests.get(
             f"{os.getenv('GITLAB_API_BASE', 'https://gitlab.com')}/api/v4/user",
             headers=headers,
+            timeout=5,
         )
         user_id = res.json().get("id")
         contributions = get_user_contributions(
@@ -211,7 +212,7 @@ def get_user_contributions(user_id, token, start_date, end_date):
             f"{os.getenv('GITLAB_API_BASE', 'https://gitlab.com')}/api/v4/users/{user_id}/events?"
             f"after={start_date}&before={end_date}&per_page=100&page={page}"
         )
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=5)
         if response.status_code != 200:
             break
         events = response.json()
