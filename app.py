@@ -101,7 +101,7 @@ def fetch_gitlab_issues(username, token):
             'page': page,
             'per_page': 100
         }
-        response = requests.get(f'{base_url}/api/v4/issues', headers=headers, params=params)
+        response = requests.get(f'{base_url}/api/v4/issues', headers=headers, params=params, timeout=5)
         if response.status_code != 200:
             break
         issues = response.json()
@@ -132,7 +132,7 @@ def organize_issues_by_category(issues):
         else:
             category = 'Uncategorized'
 
-        priority = next((l for l in labels if l.startswith('P')), 'P?')
+        priority = next((label for label in labels if label.startswith('P')), 'P?')
         categories[category].append({
             'priority': priority,
             'title': issue['title'],
@@ -148,4 +148,7 @@ def convert_dt(dt_str):
     return local_dt.strftime('%d-%m-%Y %H:%M:%S')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    host = os.environ.get('FLASK_RUN_HOST', '127.0.0.1')
+    port = int(os.environ.get('FLASK_RUN_PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'False')
+    app.run(debug=debug, host=host, port=port)
