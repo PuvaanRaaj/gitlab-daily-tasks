@@ -141,6 +141,7 @@ def update_user(user_id):
     user.job_title = request.form["job_title"]
     user.status = UserStatus(int(request.form.get("status", user.status.value)))
     db.session.commit()
+    cache.clear()
     return redirect(url_for("list_users"))
 
 
