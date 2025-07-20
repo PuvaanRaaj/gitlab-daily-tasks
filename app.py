@@ -16,7 +16,7 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
 app.secret_key = os.environ.get("SECRET_KEY", "insecure-dev-key")
 app.config["CACHE_TYPE"] = "SimpleCache"  # Fast in-memory cache
-app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # Cache timeout in seconds (5 minutes)
+app.config["CACHE_DEFAULT_TIMEOUT"] = 300
 cache = Cache(app)
 db.init_app(app)
 
