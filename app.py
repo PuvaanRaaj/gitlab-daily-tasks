@@ -6,6 +6,7 @@ import pytz
 import requests
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, url_for
+from flask_caching import Cache
 
 from models.user import User, UserStatus, db
 
@@ -14,6 +15,9 @@ load_dotenv()
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
 app.secret_key = os.environ.get("SECRET_KEY", "insecure-dev-key")
+app.config["CACHE_TYPE"] = "SimpleCache"  # Fast in-memory cache
+app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # Cache timeout in seconds (5 minutes)
+cache = Cache(app)
 db.init_app(app)
 
 
@@ -25,6 +29,7 @@ def create_tables_once():
         app.db_initialized = True
 
 
+@cache.cached(timeout=300, query_string=True)
 @app.route("/", methods=["GET", "POST"])
 def dashboard():
     users = User.query.filter(User.status == UserStatus.ACTIVE).all()
@@ -144,6 +149,7 @@ def inject_users():
     return {"nav_users": User.query.filter(User.status == UserStatus.ACTIVE).all()}
 
 
+@cache.memoize(timeout=300)
 def fetch_gitlab_issues(username, token):
     base_url = os.getenv("GITLAB_API_BASE", "https://gitlab.com")
     headers = {"Private-Token": token}
