@@ -188,14 +188,15 @@ def organize_issues_by_category(issues):
         labels = issue["labels"]
         if issue["state"] == "closed":
             category = "DEPLOYED"
-        elif "DO::Approved" in labels:
-            category = "READY FOR REVIEW"
         elif "DO::Doing" in labels:
             category = "DOING"
         elif "DO::To Do" in labels:
             category = "TODO"
+        elif "DO::Approved" in labels:
+            category = "READY FOR REVIEW"
         else:
             category = "Uncategorized"
+
 
         priority = next((label for label in labels if label.startswith("P")), "P?")
         categories[category].append(
