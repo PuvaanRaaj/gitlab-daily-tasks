@@ -18,4 +18,5 @@ class User(db.Model):
     gitlab_username = db.Column(db.String(100))
     token = db.Column(db.String(200))
     job_title = db.Column(db.String(100))
+    email = db.Column(db.String(120))
     status = db.Column(db.Enum(UserStatus), default=UserStatus.ACTIVE)
