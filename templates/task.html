@@ -36,6 +36,12 @@
       <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white">Fetch Tasks</button>
     </form>
 
+    <form action="/send-email" method="POST">
+      <input type="hidden" name="user_id" value="{{ user.id }}">
+      <button type="submit" class="bg-yellow-500 px-4 py-2 rounded">📧 Send Email</button>
+    </form>
+
+
     {% if user %}
       <div id="user-info" class="text-white mb-4 font-bold">MEMBER : {{ user.display_name }}  [TL: {{ user.team_lead }}]</div>
     {% endif %}
