@@ -5,8 +5,9 @@ from datetime import datetime, timedelta
 import pytz
 import requests
 from dotenv import load_dotenv
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, redirect, render_template, request, url_for, flash
 from flask_caching import Cache
+from email.utils import formataddr
 
 from models.user import User, UserStatus, db
 
@@ -115,6 +116,7 @@ def add_user():
             display_name=request.form["display_name"],
             team_lead=request.form["team_lead"],
             gitlab_username=request.form["gitlab_username"],
+            email=request.form["email"],
             token=request.form["token"],
             job_title=request.form["job_title"],
             status=UserStatus.ACTIVE,
@@ -137,6 +139,7 @@ def update_user(user_id):
     user.display_name = request.form["display_name"]
     user.team_lead = request.form["team_lead"]
     user.gitlab_username = request.form["gitlab_username"]
+    user.email = request.form["email"]
     user.token = request.form["token"]
     user.job_title = request.form["job_title"]
     user.status = UserStatus(int(request.form.get("status", user.status.value)))
@@ -237,6 +240,40 @@ def convert_dt(dt_str):
     naive_dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S.%f%z")
     local_dt = naive_dt.astimezone(pytz.timezone("Asia/Kuala_Lumpur"))
     return local_dt.strftime("%d-%m-%Y %H:%M:%S")
+
+@app.route("/send-email", methods=["POST"])
+def send_email():
+    user_id = request.form.get("user_id")
+    user = User.query.get_or_404(user_id)
+
+    mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+    mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+
+    if not mailgun_domain or not mailgun_api_key:
+        flash("Mailgun configuration is missing.", "danger")
+        return redirect(url_for("task_view"))
+
+    email_subject = f"GitLab Summary - {datetime.utcnow().date()}"
+    email_body = f"Daily GitLab task summary for {user.display_name}"
+
+    response = requests.post(
+        f"https://api.mailgun.net/v3/{mailgun_domain}/messages",
+        auth=("api", mailgun_api_key),
+        data={
+            "from": formataddr(("GitLab Reporter", os.getenv("MAIL_SENDER", f"noreply@{mailgun_domain}"))),
+            "to": [user.email],
+            "subject": email_subject,
+            "text": email_body,
+        },
+        timeout=10
+    )
+
+    if response.status_code == 200:
+        flash("Email sent successfully!", "success")
+    else:
+        flash(f"Failed to send email: {response.text}", "danger")
+
+    return redirect(url_for("task_view"))
 
 
 if __name__ == "__main__":
