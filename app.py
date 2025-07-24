@@ -97,7 +97,7 @@ def task_view():
             return redirect(url_for("task_view"))
         selected_user = User.query.get(user_id)
         issues = fetch_gitlab_issues(selected_user.gitlab_username, selected_user.token)
-        issues_by_category = organize_issues_by_category(issues)
+        issues_by_category = organize_issues_by_category(issues, selected_user)
 
     return render_template(
         "task.html",
@@ -179,39 +179,66 @@ def fetch_gitlab_issues(username, token):
     return all_issues
 
 
-def organize_issues_by_category(issues):
-    categories = {
-        "TODO": [],
-        "DOING": [],
-        "READY FOR REVIEW": [],
-        "DEPLOYED": [],
-        "Uncategorized": [],
-    }
-    for issue in issues:
-        labels = issue["labels"]
-        if issue["state"] == "closed":
-            category = "DEPLOYED"
-        elif "DO::Doing" in labels:
-            category = "DOING"
-        elif "DO::To Do" in labels:
-            category = "TODO"
-        elif "DO::Approved" in labels:
-            category = "READY FOR REVIEW"
-        else:
-            category = "Uncategorized"
+def organize_issues_by_category(issues, user):
+    is_qc = user.job_title.strip().lower() == "qc"
 
+    if is_qc:
+        # Special logic for QC: only DOING, and exclude DO::Rejected or DO::Deploy UAT
+        categories = {
+            "DOING": [],
+        }
+        for issue in issues:
+            labels = issue["labels"]
+            if (
+                "DO::Doing" not in labels
+                or "DO::Rejected" in labels
+                or "DO::Deploy UAT" in labels
+            ):
+                continue
+            priority = next((label for label in labels if label.startswith("P")), "P?")
+            categories["DOING"].append(
+                {
+                    "priority": priority,
+                    "title": issue["title"],
+                    "author": issue["author"]["name"],
+                    "created_at": convert_dt(issue["created_at"]),
+                    "web_url": issue["web_url"],
+                }
+            )
+    else:
+        # Default logic for other roles
+        categories = {
+            "TODO": [],
+            "DOING": [],
+            "READY FOR REVIEW": [],
+            "DEPLOYED": [],
+            "Uncategorized": [],
+        }
+        for issue in issues:
+            labels = issue["labels"]
+            if issue["state"] == "closed":
+                category = "DEPLOYED"
+            elif "DO::Doing" in labels:
+                category = "DOING"
+            elif "DO::To Do" in labels:
+                category = "TODO"
+            elif "DO::Approved" in labels:
+                category = "READY FOR REVIEW"
+            else:
+                category = "Uncategorized"
 
-        priority = next((label for label in labels if label.startswith("P")), "P?")
-        categories[category].append(
-            {
-                "priority": priority,
-                "title": issue["title"],
-                "author": issue["author"]["name"],
-                "created_at": convert_dt(issue["created_at"]),
-                "web_url": issue["web_url"],
-            }
-        )
+            priority = next((label for label in labels if label.startswith("P")), "P?")
+            categories[category].append(
+                {
+                    "priority": priority,
+                    "title": issue["title"],
+                    "author": issue["author"]["name"],
+                    "created_at": convert_dt(issue["created_at"]),
+                    "web_url": issue["web_url"],
+                }
+            )
     return categories
+
 
 
 def get_user_contributions(user_id, token, start_date, end_date):
