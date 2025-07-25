@@ -71,28 +71,33 @@
     {% endif %}
   </div>
 
-  <script>
-    function copyAll() {
-      const categories = ['TODO', 'DOING', 'READY FOR REVIEW'];
-      let result = '';
+ <script>
+  const isQA = "{{ user.job_title.strip().lower() }}" === "qa";
 
-      const userInfo = document.getElementById('user-info');
-      if (userInfo) {
-        result += userInfo.innerText.trim() + '\n\n';
-      }
+  function copyAll() {
+    const categories = ['TODO', 'DOING', 'READY FOR REVIEW'];
+    let result = '';
 
-      categories.forEach(cat => {
-        const pre = document.getElementById('block-' + cat);
-        if (pre) {
-          result += `========================== ${cat} ============================\n\n`;
-          result += pre.innerText.trim() + '\n\n';
-        }
-      });
-
-      navigator.clipboard.writeText(result).then(() => {
-        alert("Copied TODO/DOING/READY FOR REVIEW to clipboard!");
-      });
+    const userInfo = document.getElementById('user-info');
+    if (userInfo) {
+      result += userInfo.innerText.trim() + '\n\n';
     }
-  </script>
+
+    categories.forEach(cat => {
+      const pre = document.getElementById('block-' + cat);
+      if (pre) {
+        if (!isQA) {
+          result += `========================== ${cat} ============================\n\n`;
+        }
+        result += pre.innerText.trim() + '\n\n';
+      }
+    });
+
+    navigator.clipboard.writeText(result).then(() => {
+      alert("Copied TODO/DOING/READY FOR REVIEW to clipboard!");
+    });
+  }
+</script>
+
 </body>
 </html>
