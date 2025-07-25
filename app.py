@@ -16,7 +16,7 @@ load_dotenv()
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
 app.secret_key = os.environ.get("SECRET_KEY", "insecure-dev-key")
-app.config["CACHE_TYPE"] = "SimpleCache"  # Fast in-memory cache
+app.config["CACHE_TYPE"] = "SimpleCache"
 app.config["CACHE_DEFAULT_TIMEOUT"] = 300
 cache = Cache(app)
 db.init_app(app)
@@ -96,8 +96,8 @@ def task_view():
         if not user_id:
             return redirect(url_for("task_view"))
         selected_user = User.query.get(user_id)
-        issues = fetch_gitlab_issues(selected_user.gitlab_username, selected_user.token)
-        issues_by_category = organize_issues_by_category(issues, selected_user)
+        items = fetch_gitlab_items(selected_user)
+        issues_by_category = organize_issues_by_category(items, selected_user)
 
     return render_template(
         "task.html",
@@ -153,60 +153,66 @@ def inject_users():
     return {"nav_users": User.query.filter(User.status == UserStatus.ACTIVE).all()}
 
 
-@cache.memoize(timeout=300)
-def fetch_gitlab_issues(username, token):
+def fetch_gitlab_items(user):
     base_url = os.getenv("GITLAB_API_BASE", "https://gitlab.com")
-    headers = {"Private-Token": token}
-    all_issues = []
+    headers = {"Private-Token": user.token}
+    all_items = []
     page = 1
+    is_qc = user.job_title.strip().lower() == "qa"
+
+    endpoint = "merge_requests" if is_qc else "issues"
+    print(f"[LOG] Fetching {'MRs' if is_qc else 'Issues'} for user: {user.gitlab_username}")
+
     while True:
         params = {
             "scope": "all",
-            "assignee_username": username,
+            "assignee_username": user.gitlab_username,
             "page": page,
             "per_page": 100,
         }
         response = requests.get(
-            f"{base_url}/api/v4/issues", headers=headers, params=params, timeout=5
+            f"{base_url}/api/v4/{endpoint}", headers=headers, params=params, timeout=5
         )
         if response.status_code != 200:
+            print(f"[LOG] GitLab API error ({endpoint}): {response.status_code} {response.text}")
             break
-        issues = response.json()
-        if not issues:
+        items = response.json()
+        if not items:
             break
-        all_issues.extend(issues)
+        all_items.extend(items)
         page += 1
-    return all_issues
+
+    print(f"[LOG] Total {endpoint} fetched for {user.gitlab_username}: {len(all_items)}")
+    return all_items
 
 
-def organize_issues_by_category(issues, user):
-    is_qc = user.job_title.strip().lower() == "qc"
+def organize_issues_by_category(items, user):
+    PRIORITY_ORDER = {"P1": 1, "P2": 2, "P3": 3, "P4": 4, "P5": 5}
+    is_qc = user.job_title.strip().lower() == "qa"
+    print(f"[LOG] Organizing {'MRs' if is_qc else 'Issues'} for user: {user.display_name} | QA: {is_qc}")
 
     if is_qc:
-        # Special logic for QC: only DOING, and exclude DO::Rejected or DO::Deploy UAT
         categories = {
             "DOING": [],
         }
-        for issue in issues:
-            labels = issue["labels"]
-            if (
-                "DO::Doing" not in labels
-                or "DO::Rejected" in labels
-                or "DO::Deploy UAT" in labels
-            ):
-                continue
-            priority = next((label for label in labels if label.startswith("P")), "P?")
-            categories["DOING"].append(
-                {
-                    "priority": priority,
-                    "title": issue["title"],
-                    "author": issue["author"]["name"],
-                    "created_at": convert_dt(issue["created_at"]),
-                    "web_url": issue["web_url"],
-                }
-            )
+        for mr in items:
+            labels = mr.get("labels", [])
+            print(f"[LOG][QC] MR: '{mr['title']}' | Labels: {labels}")
+            if "DO::Deploy UAT" in labels and "DO::Rejected" not in labels:
+                print(f"[LOG][QC] ✅ Included in DOING: '{mr['title']}'")
+                priority = next((label for label in labels if label.startswith("P")), "P?")
+                categories["DOING"].append(
+                    {
+                        "priority": priority,
+                        "title": mr["title"],
+                        "author": mr["author"]["name"],
+                        "created_at": convert_dt(mr["created_at"]),
+                        "web_url": mr["web_url"],
+                    }
+                )
+            else:
+                print(f"[LOG][QC] ❌ Excluded: '{mr['title']}'")
     else:
-        # Default logic for other roles
         categories = {
             "TODO": [],
             "DOING": [],
@@ -214,8 +220,9 @@ def organize_issues_by_category(issues, user):
             "DEPLOYED": [],
             "Uncategorized": [],
         }
-        for issue in issues:
+        for issue in items:
             labels = issue["labels"]
+            print(f"[LOG][NON-QC] Issue: '{issue['title']}' | Labels: {labels}")
             if issue["state"] == "closed":
                 category = "DEPLOYED"
             elif "DO::Doing" in labels:
@@ -226,7 +233,7 @@ def organize_issues_by_category(issues, user):
                 category = "READY FOR REVIEW"
             else:
                 category = "Uncategorized"
-
+            print(f"[LOG][NON-QC] Assigned to category: {category}")
             priority = next((label for label in labels if label.startswith("P")), "P?")
             categories[category].append(
                 {
@@ -237,6 +244,13 @@ def organize_issues_by_category(issues, user):
                     "web_url": issue["web_url"],
                 }
             )
+
+    # Sort all categories by priority
+    for cat in categories:
+        categories[cat].sort(
+            key=lambda x: PRIORITY_ORDER.get(x["priority"], 999)
+        )
+
     return categories
 
 
@@ -267,6 +281,7 @@ def convert_dt(dt_str):
     naive_dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S.%f%z")
     local_dt = naive_dt.astimezone(pytz.timezone("Asia/Kuala_Lumpur"))
     return local_dt.strftime("%d-%m-%Y %H:%M:%S")
+
 
 @app.route("/send-email", methods=["POST"])
 def send_email():
