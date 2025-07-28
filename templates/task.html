@@ -72,7 +72,11 @@
   </div>
 
  <script>
-  const isQA = "{{ user.job_title.strip().lower() }}" === "qa";
+    {% if user %}
+    const isQA = "{{ user.job_title.strip().lower() }}" === "qa";
+  {% else %}
+    const isQA = false;
+  {% endif %}
 
   function copyAll() {
     const categories = ['TODO', 'DOING', 'READY FOR REVIEW'];
