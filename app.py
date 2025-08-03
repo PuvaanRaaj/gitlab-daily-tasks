@@ -1,4 +1,7 @@
 import os
+import re
+from urllib.parse import urlparse, unquote
+from urllib.parse import quote
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -7,6 +10,7 @@ import requests
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, url_for, flash
 from flask_caching import Cache
+from flask import jsonify
 from email.utils import formataddr
 
 from models.user import User, UserStatus, db
@@ -107,23 +111,179 @@ def task_view():
         start_date=start_date,
         end_date=end_date,
     )
+    
+
+# @app.route("/calendar")
+# def calendar_view():
+#     users = User.query.filter(User.status == UserStatus.ACTIVE).all()
+#     if not users:
+#         flash("No users found.", "danger")
+#         return redirect(url_for("dashboard"))
+
+#     week_events = []
+#     today = datetime.utcnow().date()
+#     start_of_week = today - timedelta(days=today.weekday())  # Monday
+#     end_of_week = start_of_week + timedelta(days=6)  # Sunday
+
+#     for user in users:
+#         print(f"[INFO] Fetching GitLab issues for user: {user.gitlab_username}", flush=True)
+#         issues = fetch_gitlab_items(user)
+
+#         for issue in issues:
+#             due_date = issue.get("due_date")
+#             if not due_date:
+#                 continue
+
+#             due = datetime.strptime(due_date, "%Y-%m-%d").date()
+#             if start_of_week <= due <= end_of_week:
+#                 print(f"[DEBUG] Including issue: {issue['title']} due on {due_date}", flush=True)
+#                 week_events.append({
+#                     "id": issue["id"],
+#                     "title": issue["title"],
+#                     "start": due_date,
+#                     "url": issue["web_url"],
+#                     "extendedProps": {
+#                         "author": issue["author"]["name"],
+#                         "state": issue["state"],
+#                         "web_url": issue["web_url"],
+#                         "labels": issue.get("labels", [])
+#                     }
+#                 })
+
+#     print(f"[INFO] Total issues for calendar: {len(week_events)}", flush=True)
+#     return render_template("calendar.html", events=week_events)
+
+@app.route("/calendar")
+def calendar_view():
+    users = User.query.filter(User.status == UserStatus.ACTIVE).all()
+    if not users:
+        flash("No users found.", "danger")
+        return redirect(url_for("dashboard"))
+
+    week_events = []
+    today = datetime.utcnow().date()
+    start_of_week = today - timedelta(days=today.weekday())  # Monday
+    end_of_week = start_of_week + timedelta(days=6)  # Sunday
+
+    for user in users:
+        print(f"[INFO] Fetching GitLab issues for user: {user.gitlab_username}", flush=True)
+        issues = fetch_gitlab_items(user)
+
+        for issue in issues:
+            due_date = issue.get("due_date")
+            if not due_date:
+                continue
+
+            due = datetime.strptime(due_date, "%Y-%m-%d").date()
+            if start_of_week <= due <= end_of_week:
+                assignee = issue.get("assignee", {}).get("name", user.gitlab_username)
+                print(f"[DEBUG] Including issue: {issue['title']} (assignee: {assignee})", flush=True)
+                week_events.append({
+                    "id": issue["id"],
+                    "title": issue["title"],
+                    "start": due_date,
+                    "url": issue["web_url"],
+                    "extendedProps": {
+                        "assignee": assignee,
+                        "state": issue["state"],
+                        "web_url": issue["web_url"],
+                        "labels": issue.get("labels", [])
+                    }
+                })
+
+    print(f"[INFO] Total issues for calendar: {len(week_events)}", flush=True)
+    return render_template("calendar.html", events=week_events)
+
+
+@app.route("/api/close-issue", methods=["POST"])
+def close_issue():
+    print("[HIT] /api/close-issue")
+
+    data = request.get_json()
+    issue_url = data.get("issue_url")
+
+    if not issue_url:
+        print("[ERROR] Missing issue_url in request.")
+        return jsonify(success=False, error="Missing issue URL")
+
+    print(f"[INFO] Received issue_url: {issue_url}")
+
+    try:
+        parsed = urlparse(issue_url)
+        path = unquote(parsed.path)  # decode %2F if present
+
+        # Match: /group/subgroup/project/-/issues/123 or /work_items/456
+        match = re.search(r'^/(.+)/-/(\w+)/(\d+)$', path)
+        if not match:
+            raise ValueError("URL format invalid")
+
+        project_path = match.group(1)       # Backend/merchant-portal/backend/api
+        resource_type = match.group(2)      # issues or work_items
+        iid = match.group(3)                # 123 or 167
+
+        print(f"[DEBUG] project_path: {project_path}")
+        print(f"[DEBUG] resource_type: {resource_type}")
+        print(f"[DEBUG] iid: {iid}")
+    except Exception as e:
+        print(f"[ERROR] Failed to parse issue URL: {e}")
+        return jsonify(success=False, error="Invalid issue URL format")
+
+    user = User.query.filter(User.display_name == "Puvaan Raaj").first()
+    if not user:
+        print("[ERROR] User not found.")
+        return jsonify(success=False, error="User not found")
+
+    headers = {"PRIVATE-TOKEN": user.token}
+    base_url = os.getenv("GITLAB_API_BASE", "https://gitlab.com")
+
+    # GitLab API uses "issues" endpoint even for work_items
+
+    # Encode project_path before use
+    encoded_path = quote(project_path, safe='')
+
+    close_url = f"{base_url}/api/v4/projects/{encoded_path}/issues/{iid}"
+    print(f"[INFO] PUT to: {close_url}")
+
+    res = requests.put(close_url, headers=headers, json={"state_event": "close"}, timeout=5)
+    print(f"[DEBUG] Status: {res.status_code}")
+
+    if res.status_code != 200:
+        print(f"[ERROR] GitLab response: {res.text}")
+        return jsonify(success=False, error=f"Failed to close: {res.text}")
+
+    print(f"[SUCCESS] {resource_type} #{iid} closed in project {project_path}")
+    return jsonify(success=True)
 
 
 @app.route("/admin/add-user", methods=["GET", "POST"])
 def add_user():
     if request.method == "POST":
+        gitlab_username = request.form["gitlab_username"].strip()
+
+        if not gitlab_username:
+            flash("GitLab Username is required.", "danger")
+            return redirect(url_for("add_user"))
+
+        # Optional: prevent duplicates
+        existing = User.query.filter_by(gitlab_username=gitlab_username).first()
+        if existing:
+            flash("A user with that GitLab username already exists.", "warning")
+            return redirect(url_for("add_user"))
+
         new_user = User(
-            display_name=request.form["display_name"],
-            team_lead=request.form["team_lead"],
-            gitlab_username=request.form["gitlab_username"],
-            email=request.form["email"],
-            token=request.form["token"],
-            job_title=request.form["job_title"],
+            display_name=request.form.get("display_name"),
+            team_lead=request.form.get("team_lead"),
+            gitlab_username=gitlab_username,
+            email=request.form.get("email"),
+            token=request.form.get("token"),
+            job_title=request.form.get("job_title"),
             status=UserStatus.ACTIVE,
         )
         db.session.add(new_user)
         db.session.commit()
+        flash("User added successfully!", "success")
         return redirect(url_for("dashboard"))
+
     return render_template("add_user.html")
 
 
@@ -153,15 +313,48 @@ def inject_users():
     return {"nav_users": User.query.filter(User.status == UserStatus.ACTIVE).all()}
 
 
+# def fetch_gitlab_items(user):
+#     base_url = os.getenv("GITLAB_API_BASE", "https://gitlab.com")
+#     headers = {"Private-Token": user.token}
+#     all_items = []
+#     page = 1
+#     is_qc = user.job_title.strip().lower() == "qa"
+
+#     endpoint = "merge_requests" if is_qc else "issues"
+#     print(f"[LOG] Fetching {'MRs' if is_qc else 'Issues'} for user: {user.gitlab_username}")
+
+#     while True:
+#         params = {
+#             "scope": "all",
+#             "assignee_username": user.gitlab_username,
+#             "page": page,
+#             "per_page": 100,
+#         }
+#         response = requests.get(
+#             f"{base_url}/api/v4/{endpoint}", headers=headers, params=params, timeout=5
+#         )
+#         if response.status_code != 200:
+#             print(f"[LOG] GitLab API error ({endpoint}): {response.status_code} {response.text}")
+#             break
+#         items = response.json()
+#         if not items:
+#             break
+#         all_items.extend(items)
+#         page += 1
+
+#     print(f"[LOG] Total {endpoint} fetched for {user.gitlab_username}: {len(all_items)}")
+#     return all_items
+
 def fetch_gitlab_items(user):
     base_url = os.getenv("GITLAB_API_BASE", "https://gitlab.com")
-    headers = {"Private-Token": user.token}
+    token_owner = User.query.filter(User.display_name == "Puvaan Raaj").first()  # use your own token
+    headers = {"Private-Token": token_owner.token}
     all_items = []
     page = 1
     is_qc = user.job_title.strip().lower() == "qa"
 
     endpoint = "merge_requests" if is_qc else "issues"
-    print(f"[LOG] Fetching {'MRs' if is_qc else 'Issues'} for user: {user.gitlab_username}")
+    print(f"[LOG] Fetching {endpoint} for username: {user.gitlab_username}")
 
     while True:
         params = {
@@ -171,7 +364,10 @@ def fetch_gitlab_items(user):
             "per_page": 100,
         }
         response = requests.get(
-            f"{base_url}/api/v4/{endpoint}", headers=headers, params=params, timeout=5
+            f"{base_url}/api/v4/{endpoint}",
+            headers=headers,
+            params=params,
+            timeout=5
         )
         if response.status_code != 200:
             print(f"[LOG] GitLab API error ({endpoint}): {response.status_code} {response.text}")
@@ -184,6 +380,7 @@ def fetch_gitlab_items(user):
 
     print(f"[LOG] Total {endpoint} fetched for {user.gitlab_username}: {len(all_items)}")
     return all_items
+
 
 
 def organize_issues_by_category(items, user):
