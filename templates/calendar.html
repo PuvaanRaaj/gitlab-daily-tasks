@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GitLab Weekly Issue Calendar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.18/index.global.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+    }
+
+    header {
+      background: #fff;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      font-size: 1.5rem;
+    }
+
+    #calendar-container {
+      padding: 1rem;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    #calendar {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    #task-list {
+      margin: 2rem auto;
+      max-width: 1000px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .user-group {
+      margin-bottom: 2rem;
+    }
+
+    .user-group h4 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.1rem;
+      color: #333;
+    }
+
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #eee;
+      padding: 0.75rem 0;
+    }
+
+    .task-left {
+      flex-grow: 1;
+      min-width: 0;
+    }
+
+    .task-left a {
+      display: block;
+      margin-bottom: 6px;
+      text-decoration: none;
+      color: #007bff;
+      font-weight: 500;
+    }
+
+    .label-badge {
+      display: inline-block;
+      background-color: #eee;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin: 0 4px 4px 0;
+    }
+
+    .task-right {
+      margin-left: auto;
+      padding-top: 6px;
+    }
+
+    .task-right button {
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      border: 1px solid #00a000;
+      background-color: #e7ffe7;
+      cursor: pointer;
+    }
+
+    .task-right button:hover {
+      background-color: #ccffcc;
+    }
+  </style>
+</head>
+<body>
+  <header>GitLab Weekly Issue Calendar</header>
+
+  <div id="calendar-container">
+    <div id="calendar"></div>
+  </div>
+
+  <div id="task-list">
+    <div class="task-header">
+      <h3>Tasks This Week</h3>
+      <button id="mark-all">Mark All as Done</button>
+    </div>
+    <div id="task-items"></div>
+  </div>
+
+  <script>
+    const issues = {{ events | tojson }};
+    const userColors = ['#60a5fa', '#34d399', '#facc15', '#f87171', '#c084fc', '#fb923c', '#10b981'];
+    const userColorMap = {};
+    let colorIndex = 0;
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const calendarEl = document.getElementById("calendar");
+      const taskItems = document.getElementById("task-items");
+
+      issues.forEach(issue => {
+        const user = issue.extendedProps.assignee || 'Unassigned';
+        if (!userColorMap[user]) {
+          userColorMap[user] = userColors[colorIndex % userColors.length];
+          colorIndex++;
+        }
+        issue.backgroundColor = userColorMap[user];
+        issue.borderColor = userColorMap[user];
+      });
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridWeek",
+        firstDay: 1,
+        height: "auto",
+        events: issues,
+      });
+
+      calendar.render();
+
+      const grouped = {};
+      issues.forEach(issue => {
+        const user = issue.extendedProps.assignee || "Unassigned";
+        if (!grouped[user]) grouped[user] = [];
+        grouped[user].push(issue);
+      });
+
+      Object.entries(grouped).forEach(([user, userIssues]) => {
+        const groupDiv = document.createElement("div");
+        groupDiv.className = "user-group";
+
+        const heading = document.createElement("h4");
+        heading.textContent = user;
+        groupDiv.appendChild(heading);
+
+        userIssues.forEach(issue => {
+          const item = document.createElement("div");
+          item.className = "task-item";
+
+          const left = document.createElement("div");
+          left.className = "task-left";
+
+          const right = document.createElement("div");
+          right.className = "task-right";
+
+          const link = document.createElement("a");
+          const issueUrl = issue.extendedProps.web_url || issue.url;
+          link.href = issueUrl;
+          link.target = "_blank";
+          link.textContent = `${issue.title} (Due: ${issue.start})`;
+
+          const labels = issue.extendedProps.labels || [];
+          const priority = labels.find(l => l.startsWith("P")) || "P?";
+          const priorityBadge = document.createElement("span");
+          priorityBadge.className = "label-badge";
+          priorityBadge.textContent = priority;
+
+          left.appendChild(priorityBadge);
+          left.appendChild(link);
+
+          labels.forEach(label => {
+            if (!label.startsWith("P")) {
+              const badge = document.createElement("span");
+              badge.className = "label-badge";
+              badge.textContent = label;
+              left.appendChild(badge);
+            }
+          });
+
+          const button = document.createElement("button");
+          button.textContent = "Mark as Done";
+
+          button.onclick = function () {
+            fetch("/api/close-issue", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ issue_url: issueUrl })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                item.remove();
+                calendar.getEventById(issue.id)?.remove();
+                alert("Issue marked as completed.");
+              } else {
+                alert("Failed: " + data.error);
+              }
+            })
+            .catch(err => {
+              alert("Error: " + err.message);
+            });
+          };
+
+          right.appendChild(button);
+          item.appendChild(left);
+          item.appendChild(right);
+          groupDiv.appendChild(item);
+        });
+
+        taskItems.appendChild(groupDiv);
+      });
+
+      document.getElementById("mark-all").onclick = function () {
+        if (!confirm("Are you sure you want to mark ALL as completed?")) return;
+
+        Promise.all(
+          issues.map(issue => {
+            const issueUrl = issue.extendedProps.web_url || issue.url;
+            return fetch("/api/close-issue", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ issue_url: issueUrl })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                calendar.getEventById(issue.id)?.remove();
+                const el = document.querySelector(`a[href="${issueUrl}"]`)?.closest(".task-item");
+                el?.remove();
+              }
+            });
+          })
+        ).then(() => alert("All marked as completed."));
+      };
+    });
+  </script>
+</body>
+</html>
