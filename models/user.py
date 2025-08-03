@@ -13,10 +13,12 @@ class UserStatus(enum.Enum):
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    display_name = db.Column(db.String(100))
-    team_lead = db.Column(db.String(100))
-    gitlab_username = db.Column(db.String(100))
-    token = db.Column(db.String(200))
-    job_title = db.Column(db.String(100))
-    email = db.Column(db.String(120))
-    status = db.Column(db.Enum(UserStatus), default=UserStatus.ACTIVE)
+    display_name = db.Column(db.String(100), nullable=True)
+    team_lead = db.Column(db.String(100), nullable=True)
+    gitlab_username = db.Column(db.String(100), nullable=False, index=True)
+    token = db.Column(db.String(200), nullable=True)
+    job_title = db.Column(db.String(100), nullable=True)
+    email = db.Column(db.String(120), nullable=True)
+    status = db.Column(db.Enum(UserStatus), default=UserStatus.ACTIVE, nullable=True)
+
+
