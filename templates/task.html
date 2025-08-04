@@ -7,15 +7,7 @@
 </head>
 <body class="bg-black text-white font-mono text-sm p-6">
   <div class="max-w-4xl mx-auto">
-    <nav class="flex justify-between items-center mb-6">
-      <h1 class="text-xl text-green-400 font-bold">GitLab Daily Tasks</h1>
-      <div class="space-x-4">
-        <a href="/" class="text-white hover:underline">Dashboard</a>
-        <a href="/admin/add-user" class="text-white hover:underline">Add User</a>
-        <a href="/admin/users" class="text-white hover:underline">Update Users</a>
-      </div>
-    </nav>
-
+    {% include 'navbar.html' %}
     <form method="post" class="flex flex-wrap gap-2 text-black mb-6 items-end">
       <div>
         <label class="block text-gray-400 mb-1">Select Member:</label>

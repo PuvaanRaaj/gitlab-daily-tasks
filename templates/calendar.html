@@ -4,21 +4,24 @@
   <meta charset="UTF-8" />
   <title>GitLab Weekly Issue Calendar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.18/index.global.min.js"></script>
-
   <style>
+    /* Dark mode overrides for FullCalendar and custom UI */
     body {
+      background-color: #0f172a; /* Slate-900 */
+      color: #f8fafc; /* Slate-50 */
+      font-family: monospace;
       margin: 0;
-      font-family: sans-serif;
-      background-color: #f5f5f5;
     }
 
     header {
-      background: #fff;
+      background: #1e293b; /* Slate-800 */
       padding: 1rem;
       text-align: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       font-size: 1.5rem;
+      color: #38bdf8; /* Sky-400 */
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
     }
 
     #calendar-container {
@@ -28,19 +31,32 @@
     }
 
     #calendar {
-      background: #fff;
+      background: #1e293b;
       border-radius: 8px;
       padding: 1rem;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      color: white;
+    }
+
+    .fc .fc-toolbar-title {
+      color: white;
+    }
+
+    .fc .fc-daygrid-day-number {
+      color: white;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+      color: #cbd5e1; /* Slate-300 */
     }
 
     #task-list {
       margin: 2rem auto;
       max-width: 1000px;
-      background: #fff;
+      background: #1e293b;
       border-radius: 8px;
       padding: 1rem;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     }
 
     .task-header {
@@ -57,7 +73,7 @@
     .user-group h4 {
       margin: 0 0 0.5rem 0;
       font-size: 1.1rem;
-      color: #333;
+      color: #facc15; /* Yellow-400 */
     }
 
     .task-item {
@@ -65,7 +81,7 @@
       justify-content: space-between;
       align-items: flex-start;
       flex-wrap: wrap;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid #334155; /* Slate-700 */
       padding: 0.75rem 0;
     }
 
@@ -78,13 +94,14 @@
       display: block;
       margin-bottom: 6px;
       text-decoration: none;
-      color: #007bff;
+      color: #60a5fa; /* Blue-400 */
       font-weight: 500;
     }
 
     .label-badge {
       display: inline-block;
-      background-color: #eee;
+      background-color: #334155;
+      color: #f1f5f9;
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 0.75rem;
@@ -96,35 +113,43 @@
       padding-top: 6px;
     }
 
-    .task-right button {
+    .task-right button,
+    #mark-all {
       padding: 6px 12px;
       font-size: 0.9rem;
       border-radius: 6px;
-      border: 1px solid #00a000;
-      background-color: #e7ffe7;
+      border: 1px solid #22c55e; /* Green-500 */
+      background-color: #14532d; /* Green-900 */
+      color: white;
       cursor: pointer;
     }
 
-    .task-right button:hover {
-      background-color: #ccffcc;
+    .task-right button:hover,
+    #mark-all:hover {
+      background-color: #166534; /* Green-800 */
     }
   </style>
 </head>
 <body>
-  <header>GitLab Weekly Issue Calendar</header>
 
+{% include 'navbar.html' %}
+
+
+  <!-- Calendar -->
   <div id="calendar-container">
     <div id="calendar"></div>
   </div>
 
+  <!-- Weekly Tasks -->
   <div id="task-list">
     <div class="task-header">
-      <h3>Tasks This Week</h3>
+      <h3 class="text-yellow-400 text-lg font-bold">Tasks This Week</h3>
       <button id="mark-all">Mark All as Done</button>
     </div>
     <div id="task-items"></div>
   </div>
 
+  <!-- JS for calendar & tasks -->
   <script>
     const issues = {{ events | tojson }};
     const userColors = ['#60a5fa', '#34d399', '#facc15', '#f87171', '#c084fc', '#fb923c', '#10b981'];
@@ -143,13 +168,14 @@
         }
         issue.backgroundColor = userColorMap[user];
         issue.borderColor = userColorMap[user];
+        issue.textColor = '#000';
       });
 
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: "dayGridWeek",
         firstDay: 1,
         height: "auto",
-        events: issues,
+        events: issues
       });
 
       calendar.render();

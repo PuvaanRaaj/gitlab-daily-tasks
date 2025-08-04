@@ -1,0 +1,40 @@
+<!-- templates/navbar.html -->
+<nav class="flex items-center justify-between flex-wrap bg-black text-white px-4 py-3">
+  <!-- Left: Brand -->
+  <div class="flex items-center flex-shrink-0 text-green-400 text-xl font-bold">
+    GitLab Dashboard
+  </div>
+
+  <!-- Center: Page Title -->
+  <div class="hidden md:block text-sky-400 text-center text-lg font-mono w-full absolute left-1/2 transform -translate-x-1/2">
+    {{ page_title }}
+  </div>
+
+  <!-- Right: Dropdown Menu -->
+  <div class="relative inline-block text-left ml-auto">
+    <div>
+      <button id="menu-button" class="inline-flex justify-center w-full rounded-md px-3 py-1 bg-gray-800 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none">
+        Menu ▾
+      </button>
+    </div>
+    <div id="menu-items" class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-900 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+      <div class="py-1">
+        <a href="/" class="block px-4 py-2 text-sm hover:bg-gray-700">Dashboard</a>
+        <a href="/task" class="block px-4 py-2 text-sm hover:bg-gray-700">Tasks</a>
+        <a href="/admin/add-user" class="block px-4 py-2 text-sm hover:bg-gray-700">Add User</a>
+        <a href="/admin/users" class="block px-4 py-2 text-sm hover:bg-gray-700">Update Users</a>
+        <a href="/calendar" class="block px-4 py-2 text-sm hover:bg-gray-700">Calendar</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const button = document.getElementById("menu-button");
+    const menu = document.getElementById("menu-items");
+    button.addEventListener("click", () => {
+      menu.classList.toggle("hidden");
+    });
+  });
+</script>
